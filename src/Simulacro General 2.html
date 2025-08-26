@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulacro 90 Preguntas - Competencias (Versión extendida)</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      line-height: 1.6; 
+      background: #f9f9f9; 
+      text-align: center;
+    }
+    h1 { margin-bottom: 10px; }
+    .instructions { 
+      background: #eef; 
+      padding: 10px; 
+      border-radius: 8px; 
+      margin: 0 auto 20px auto; 
+      display: inline-block; 
+      text-align: left;
+    }
+    .question { 
+      margin: 15px auto; 
+      background: #fff; 
+      padding: 15px; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      width: 80%;
+      text-align: justify;
+    }
+    .question span.num { font-weight: bold; margin-right: 5px; }
+    .options { margin-top: 10px; text-align: center; }
+    .options label { display: inline-block; margin: 5px 15px; }
+    button { margin: 10px 5px; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; }
+    button:first-of-type { background: #4CAF50; color: white; }
+    button:last-of-type { background: #f44336; color: white; }
+    .result { 
+      margin: 20px auto; 
+      padding: 15px; 
+      background: #fff; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      width: 60%; 
+    }
+  </style>
+</head>
+<body>
+  <h1>Simulacro Escala Likert - 90 Preguntas (Versión extendida)</h1>
+  <div class="instructions">
+    <p><strong>Instrucciones:</strong> Seleccione la opción que mejor refleje su grado de acuerdo con cada afirmación:</p>
+    <ul>
+      <li>A. Totalmente en desacuerdo</li>
+      <li>B. En desacuerdo</li>
+      <li>C. Ni de acuerdo, ni en desacuerdo</li>
+      <li>D. De acuerdo</li>
+      <li>E. Totalmente de acuerdo</li>
+    </ul>
+  </div>
+
+  <form id="likertForm"></form>
+
+  <button type="button" onclick="calcularResultado()">Calcular resultado</button>
+  <button type="button" onclick="reiniciar()">Reiniciar</button>
+
+  <div id="resultado" class="result"></div>
+
+  <script>
+    let preguntas = [
+      // Aprendizaje Continuo (1–10)
+      "Busco de manera constante nuevas fuentes de información, capacitaciones o cursos que me permitan fortalecer mis competencias y responder mejor a los cambios que exige la administración pública.",
+      "Participo activamente en los espacios de capacitación ofrecidos por la entidad, con el fin de aplicar los conocimientos en mi labor diaria y mejorar los resultados obtenidos.",
+      "Comparto de manera abierta los aprendizajes adquiridos en procesos formativos, promoviendo un flujo de conocimiento que beneficie a mis compañeros y a la organización en general.",
+      "Me mantengo informado sobre regulaciones vigentes y adapto mis prácticas laborales para asegurar que estén en concordancia con las normativas actuales.",
+      "Dedico tiempo a aprender de la experiencia y conocimientos de mis colegas, aprovechando estos intercambios para nivelar y ampliar mis capacidades.",
+      "Evito actualizarme frente a los cambios normativos o tecnológicos, lo cual limita mi desempeño profesional.", // INVERSA
+      "Aplico de manera práctica en mis funciones los nuevos métodos y herramientas aprendidos en espacios de formación institucional.",
+      "Desaprovecho oportunidades de capacitación o actualización ofrecidas por la entidad, limitando mi crecimiento profesional.", // INVERSA
+      "Busco relacionar los nuevos conocimientos adquiridos con los procesos internos de mi área, para mejorar la efectividad de las prácticas laborales.",
+      "Promuevo la creación de grupos de trabajo donde se compartan experiencias y aprendizajes para beneficio del equipo.",
+
+      // Orientación a Resultados (11–20)
+      "Establezco objetivos de trabajo claros y realistas que permiten organizar las actividades de manera eficiente para el cumplimiento de las metas institucionales.",
+      "Asumo de manera responsable los resultados de mis funciones, sin delegar la culpa en otros ante situaciones de dificultad.",
+      "Diseño y aplico indicadores que permiten medir con objetividad el cumplimiento de los objetivos de mi labor.",
+      "Tomo medidas preventivas para minimizar riesgos que puedan afectar el cumplimiento de los compromisos adquiridos.",
+      "Planifico estrategias orientadas a garantizar el cumplimiento de los resultados esperados por la organización.",
+      "Ignoro los estándares de calidad exigidos por la entidad en el desarrollo de mis funciones.", // INVERSA
+      "Cumplo oportunamente con las funciones y compromisos de acuerdo con los tiempos establecidos por la organización.",
+      "Gestiono adecuadamente los recursos disponibles para aumentar la productividad y alcanzar los resultados esperados.",
+      "Aporto de manera activa a la consecución de resultados, alineando mis productos con las normas institucionales.",
+      "Reviso de forma regular el grado de avance de los objetivos para identificar y corregir desviaciones.",
+
+      // Orientación al usuario y ciudadano (21–30)
+      "Valoro y atiendo con diligencia las necesidades de los ciudadanos, procurando dar respuestas oportunas y ajustadas a la normatividad vigente.",
+      "Establezco espacios de comunicación efectiva con los usuarios, reconociendo la importancia de escuchar sus inquietudes y expectativas.",
+      "Respondo con prontitud y respeto a las solicitudes planteadas por los ciudadanos, brindando información clara y veraz.",
+      "Promuevo el uso de un lenguaje incluyente y respetuoso en todas las interacciones con los usuarios, evitando discriminación.",
+      "Aplico en todo momento los principios de transparencia, trato digno y no estigmatización en mis relaciones con los ciudadanos.",
+      "Ignoro deliberadamente las necesidades expresadas por los usuarios en los espacios de atención.", // INVERSA
+      "Incorporo de manera activa las inquietudes y expectativas de los ciudadanos en la formulación de proyectos institucionales.",
+      "Transmito de forma clara y objetiva la información que requieren los ciudadanos en el ejercicio de sus derechos.",
+      "Desconozco la importancia de retroalimentar a los usuarios acerca de los resultados de su solicitud.", // INVERSA
+      "Diseño o apoyo mecanismos que permiten conocer y analizar las necesidades de los ciudadanos para mejorar el servicio.",
+
+      // Compromiso con la Organización (31–40)
+      "Promuevo activamente las metas institucionales y respeto las normas establecidas por la organización en todas mis actuaciones.",
+      "Antepongo los intereses de la organización a los míos personales cuando la situación así lo exige.",
+      "Apoyo decididamente a la organización en situaciones difíciles, demostrando lealtad y compromiso.",
+      "Evidencio sentido de pertenencia hacia la entidad a través de mis palabras y acciones cotidianas.",
+      "Me ofrezco para colaborar con compañeros y otras áreas, cuando es necesario, sin descuidar mis funciones asignadas.",
+      "Ignoro las prioridades de la organización para dar mayor relevancia a mis intereses personales.", // INVERSA
+      "Cumplo de manera rigurosa con mis funciones y responsabilidades, alineándome con las metas institucionales.",
+      "Defiendo la misión y los valores de la organización en diferentes espacios de interacción.",
+      "Me muestro indiferente frente a los objetivos estratégicos de la entidad en la que trabajo.", // INVERSA
+      "Actúo como embajador de la entidad, transmitiendo confianza y compromiso hacia la ciudadanía.",
+
+      // Trabajo en equipo (41–50)
+      "Cumplo los compromisos adquiridos con el equipo de trabajo, respetando los acuerdos establecidos en común.",
+      "Valoro y respeto la diversidad de opiniones, reconociendo que enriquecen el trabajo colectivo.",
+      "Asumo mi rol en el equipo con responsabilidad, motivando a mis compañeros para alcanzar juntos los objetivos propuestos.",
+      "Planifico mis actividades considerando su impacto en la consecución de los resultados colectivos.",
+      "Mantengo una comunicación directa, clara y respetuosa con los demás integrantes del equipo.",
+      "Ignoro las responsabilidades que me corresponden como miembro del equipo.", // INVERSA
+      "Facilito la integración de nuevos miembros, apoyando su adaptación a las dinámicas del grupo.",
+      "Participo en la resolución de conflictos buscando consensos que favorezcan al equipo.",
+      "Dificulto deliberadamente el trabajo de mis compañeros para resaltar mi labor individual.", // INVERSA
+      "Contribuyo de forma activa a alcanzar las metas colectivas, priorizando el bien común.",
+
+      // Adaptación al cambio (51–60)
+      "Acepto con disposición las nuevas situaciones laborales y procuro encontrar oportunidades de aprendizaje en ellas.",
+      "Respondo de manera flexible a los cambios institucionales, ajustando mis funciones cuando es necesario.",
+      "Apoyo las decisiones de la entidad que implican modificaciones en los procesos y objetivos de trabajo.",
+      "Me adapto rápidamente a nuevas metodologías y herramientas implementadas en la organización.",
+      "Promuevo que mis compañeros también asuman los cambios de manera positiva y constructiva.",
+      "Manifiesto resistencia constante frente a cualquier cambio en la organización.", // INVERSA
+      "Colaboro activamente en procesos de innovación, aportando ideas y soluciones.",
+      "Implemento sin dificultad nuevos procedimientos definidos por la entidad.",
+      "Procuro comprender y valorar los beneficios de los cambios en lugar de enfocarme solo en las dificultades.",
+      "Rechazo de plano cualquier ajuste en las formas de trabajo.", // INVERSA
+
+      // Manejo de la Información (61–70)
+      "Manejo con total responsabilidad la información personal e institucional que está bajo mi custodia.",
+      "Custodio y organizo adecuadamente los documentos y datos a mi cargo, garantizando su integridad.",
+      "Transmito información objetiva y oportuna para que otros puedan tomar decisiones acertadas.",
+      "Recojo únicamente la información indispensable para cumplir mis funciones de manera eficiente.",
+      "Evito tratar en público asuntos relacionados con información confidencial de la organización.",
+      "Divulgo información sensible sin autorización, aunque pueda perjudicar a la entidad o a sus miembros.", // INVERSA
+      "Organizo la información de acuerdo con las normas legales y políticas institucionales vigentes.",
+      "Proporciono información veraz y confiable a quienes la requieran dentro del marco de mis funciones.",
+      "Hago pública información personal o institucional sin medir las consecuencias de ello.", // INVERSA
+      "Protejo de manera adecuada la información personal de los usuarios que acceden al servicio.",
+
+      // Relaciones Interpersonales (71–80)
+      "Escucho con interés las opiniones y necesidades de mis compañeros de trabajo para construir un ambiente de respeto.",
+      "Transmito información de forma fidedigna evitando rumores o mensajes que deterioren la confianza laboral.",
+      "Tomo la iniciativa de comunicarme con usuarios y compañeros utilizando un lenguaje respetuoso e incluyente.",
+      "Utilizo expresiones claras y adecuadas al dirigirme a personas de diferentes niveles educativos o culturales.",
+      "Fomento el respeto mutuo en las interacciones laborales y en el trato con los ciudadanos.",
+      "Interrumpo constantemente las intervenciones de otros sin darles oportunidad de expresarse.", // INVERSA
+      "Valoro la diversidad cultural y funcional de las personas con las que interactúo en el trabajo.",
+      "Ignoro las inquietudes de mis compañeros cuando requieren apoyo en situaciones difíciles.", // INVERSA
+      "Brindo acompañamiento y apoyo a quienes lo necesitan, dentro y fuera de mi equipo de trabajo.",
+      "Promuevo un ambiente laboral positivo y constructivo en todas mis relaciones interpersonales.",
+
+      // Colaboración (81–90)
+      "Coopero activamente con mis compañeros para que el equipo alcance los objetivos institucionales establecidos.",
+      "Cumplo rigurosamente los compromisos que adquiero con mis compañeros y con el equipo de trabajo.",
+      "Facilito la labor de mis superiores ofreciendo apoyo oportuno en lo que esté a mi alcance.",
+      "Coordino mis actividades de manera articulada con las de otros para evitar duplicidad o conflictos.",
+      "Promuevo la cooperación entre diferentes áreas de la entidad para cumplir los objetivos colectivos.",
+      "Prefiero trabajar de manera aislada aunque ello afecte el trabajo grupal.", // INVERSA
+      "Brindo apoyo a mis compañeros en situaciones difíciles o de alta presión laboral.",
+      "Ignoro los efectos que mis actuaciones pueden tener sobre las tareas de mis compañeros.", // INVERSA
+      "Fomento la confianza y el respeto mutuo dentro de los grupos de trabajo en los que participo.",
+      "Asumo el compromiso de contribuir con mi esfuerzo para lograr metas colectivas que beneficien a la organización."
+    ];
+
+    // Índices inversos (1-based)
+    let inversas = [6, 8, 16, 21, 29, 36, 39, 46, 49, 56, 60, 66, 69, 76, 78, 86, 88];
+
+    const opcionesLetras = ["A", "B", "C", "D", "E"];
+
+    function generarFormulario() {
+      const form = document.getElementById("likertForm");
+      form.innerHTML = "";
+      preguntas.forEach((texto, i) => {
+        const div = document.createElement("div");
+        div.className = "question";
+        const label = document.createElement("label");
+        label.innerHTML = `<span class="num">${i + 1}.</span> ${texto}`;
+        div.appendChild(label);
+
+        const opcionesDiv = document.createElement("div");
+        opcionesDiv.className = "options";
+        for (let j = 1; j <= 5; j++) {
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "q" + (i + 1);
+          input.value = j;
+          const optLabel = document.createElement("label");
+          optLabel.appendChild(input);
+          optLabel.appendChild(document.createTextNode(" " + opcionesLetras[j - 1]));
+          opcionesDiv.appendChild(optLabel);
+        }
+        div.appendChild(opcionesDiv);
+        form.appendChild(div);
+      });
+    }
+
+    function calcularResultado() {
+      let total = 0, contestadas = 0, malas = [];
+      let sinResponder = [];
+
+      preguntas.forEach((_, i) => {
+        const opciones = document.getElementsByName("q" + (i + 1));
+        let valor = null;
+        for (let op of opciones) if (op.checked) valor = parseInt(op.value);
+
+        if (valor === null) {
+          sinResponder.push(i + 1);
+        } else {
+          contestadas++;
+          if (inversas.includes(i + 1)) valor = 6 - valor;
+          total += valor;
+          if (valor <= 2) malas.push(i + 1);
+        }
+      });
+
+      if (sinResponder.length > 0) {
+        alert("Debe responder todas las preguntas. Faltan: " + sinResponder.join(", "));
+        return;
+      }
+
+      const promedio = (total / contestadas).toFixed(2);
+      let nivel = "";
+      if (promedio >= 4.5) nivel = "Muy alto";
+      else if (promedio >= 3.5) nivel = "Alto";
+      else if (promedio >= 2.5) nivel = "Medio";
+      else if (promedio >= 1.5) nivel = "Bajo";
+      else nivel = "Muy bajo";
+
+      document.getElementById("resultado").innerHTML =
+        `<p><strong>Puntaje total:</strong> ${total}</p>
+         <p><strong>Promedio:</strong> ${promedio}</p>
+         <p><strong>Nivel:</strong> ${nivel}</p>
+         <p><strong>Preguntas con baja puntuación:</strong> ${malas.join(", ") || "Ninguna"}</p>`;
+    }
+
+    function reiniciar() {
+      const combinadas = preguntas.map((texto, idx) => ({
+        texto,
+        inversa: inversas.includes(idx + 1)
+      }));
+      for (let i = combinadas.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [combinadas[i], combinadas[j]] = [combinadas[j], combinadas[i]];
+      }
+      preguntas = combinadas.map(x => x.texto);
+      inversas = combinadas
+        .map((x, idx) => (x.inversa ? idx + 1 : null))
+        .filter(x => x !== null);
+
+      generarFormulario();
+      document.getElementById("resultado").innerHTML = "";
+    }
+
+    generarFormulario();
+  </script>
+</body>
+</html>

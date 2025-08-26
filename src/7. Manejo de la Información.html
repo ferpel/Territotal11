@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escala Likert - Manejo de la Información</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      line-height: 1.6; 
+      background: #f9f9f9; 
+      text-align: center;
+    }
+    h1 { margin-bottom: 10px; }
+    .instructions { 
+      background: #eef; 
+      padding: 10px; 
+      border-radius: 8px; 
+      margin: 0 auto 20px auto; 
+      display: inline-block; 
+      text-align: left;
+    }
+    .question { 
+      margin: 15px auto; 
+      background: #fff; 
+      padding: 15px; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      width: 80%;
+      text-align: center;
+    }
+    .question span.num { font-weight: bold; margin-right: 5px; }
+    .options { margin-top: 10px; }
+    .options label { display: inline-block; margin: 5px 15px; }
+    button { margin: 10px 5px; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; }
+    button:first-of-type { background: #4CAF50; color: white; }
+    button:last-of-type { background: #f44336; color: white; }
+    .result { 
+      margin: 20px auto; 
+      padding: 15px; 
+      background: #fff; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      width: 60%; 
+    }
+  </style>
+</head>
+<body>
+  <h1>Escala Likert - Manejo de la Información</h1>
+  <div class="instructions">
+    <p><strong>Instrucciones:</strong> Seleccione la opción que mejor refleje su grado de acuerdo con cada afirmación:</p>
+    <ul>
+      <li>A. Totalmente en desacuerdo</li>
+      <li>B. En desacuerdo</li>
+      <li>C. Ni de acuerdo, ni en desacuerdo</li>
+      <li>D. De acuerdo</li>
+      <li>E. Totalmente de acuerdo</li>
+    </ul>
+  </div>
+
+  <form id="likertForm"></form>
+
+  <button type="button" onclick="calcularResultado()">Calcular resultado</button>
+  <button type="button" onclick="reiniciar()">Reiniciar</button>
+
+  <div id="resultado" class="result"></div>
+
+  <script>
+    let preguntas = [
+      "Manejo con responsabilidad la información personal e institucional a mi cargo.",
+      "Evito compartir información confidencial en espacios no autorizados.",
+      "Recojo solo la información imprescindible para desarrollar mis tareas.",
+      "Organizo y custodio adecuadamente la información bajo mi cuidado.",
+      "Transmito información oportuna y objetiva.",
+      "Hago pública información sensible aunque pueda afectar a la organización.", // INVERSA
+      "Respeto las normas legales sobre protección de datos.",
+      "Evito preguntar sobre temas que indagan en información confidencial.",
+      "Clasifico y archivo la información de forma organizada.",
+      "Entrego información distorsionada o incompleta.", // INVERSA
+      "Conservo adecuadamente la documentación física y digital.",
+      "Comparto información útil con mis compañeros cuando es pertinente.",
+      "Ignoro las normas de seguridad en el manejo de datos.", // INVERSA
+      "Solicito autorización antes de difundir información institucional.",
+      "Utilizo los canales oficiales para transmitir información.",
+      "Divulgo datos sin verificar su veracidad.", // INVERSA
+      "Identifico qué información es confidencial y la trato como tal.",
+      "Protejo las claves de acceso y datos sensibles.",
+      "Comparto información privada en redes sociales.", // INVERSA
+      "Entrego información en los tiempos establecidos.",
+      "Garantizo la confidencialidad de la información de usuarios y ciudadanos.",
+      "Accedo a información confidencial sin tener permiso.", // INVERSA
+      "Aplico medidas de seguridad al manipular información digital.",
+      "Reviso que la información que transmito sea veraz.",
+      "Descuido la protección de información física o digital.", // INVERSA
+      "Uso la información solo para los fines institucionales previstos.",
+      "Elaboro reportes con información clara y completa.",
+      "Manipulo información para favorecer intereses personales.", // INVERSA
+      "Aseguro que la información se mantenga actualizada.",
+      "Mantengo reserva de los datos incluso después de dejar la organización."
+    ];
+
+    // Índices de preguntas inversas (1-based)
+    let inversas = [6, 10, 13, 16, 19, 22, 25, 28];
+
+    const opcionesLetras = ["A", "B", "C", "D", "E"];
+
+    function generarFormulario() {
+      const form = document.getElementById("likertForm");
+      form.innerHTML = "";
+      preguntas.forEach((texto, i) => {
+        const div = document.createElement("div");
+        div.className = "question";
+        const label = document.createElement("label");
+        label.innerHTML = `<span class="num">${i + 1}.</span> ${texto}`;
+        div.appendChild(label);
+
+        const opcionesDiv = document.createElement("div");
+        opcionesDiv.className = "options";
+        for (let j = 1; j <= 5; j++) {
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "q" + (i + 1);
+          input.value = j;
+          const optLabel = document.createElement("label");
+          optLabel.appendChild(input);
+          optLabel.appendChild(document.createTextNode(" " + opcionesLetras[j - 1]));
+          opcionesDiv.appendChild(optLabel);
+        }
+        div.appendChild(opcionesDiv);
+        form.appendChild(div);
+      });
+    }
+
+    function calcularResultado() {
+      let total = 0, contestadas = 0, malas = [];
+      let sinResponder = [];
+
+      preguntas.forEach((_, i) => {
+        const opciones = document.getElementsByName("q" + (i + 1));
+        let valor = null;
+        for (let op of opciones) if (op.checked) valor = parseInt(op.value);
+
+        if (valor === null) {
+          sinResponder.push(i + 1);
+        } else {
+          contestadas++;
+          if (inversas.includes(i + 1)) valor = 6 - valor;
+          total += valor;
+          if (valor <= 2) malas.push(i + 1);
+        }
+      });
+
+      if (sinResponder.length > 0) {
+        alert("Debe responder todas las preguntas. Faltan: " + sinResponder.join(", "));
+        return;
+      }
+
+      const promedio = (total / contestadas).toFixed(2);
+      let nivel = "";
+      if (promedio >= 4.5) nivel = "Muy alto";
+      else if (promedio >= 3.5) nivel = "Alto";
+      else if (promedio >= 2.5) nivel = "Medio";
+      else if (promedio >= 1.5) nivel = "Bajo";
+      else nivel = "Muy bajo";
+
+      document.getElementById("resultado").innerHTML =
+        `<p><strong>Puntaje total:</strong> ${total}</p>
+         <p><strong>Promedio:</strong> ${promedio}</p>
+         <p><strong>Nivel:</strong> ${nivel}</p>
+         <p><strong>Preguntas con baja puntuación:</strong> ${malas.join(", ") || "Ninguna"}</p>`;
+    }
+
+    function reiniciar() {
+      // Barajar preguntas y mantener coherencia de inversas
+      const combinadas = preguntas.map((texto, idx) => ({
+        texto,
+        inversa: inversas.includes(idx + 1)
+      }));
+      for (let i = combinadas.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [combinadas[i], combinadas[j]] = [combinadas[j], combinadas[i]];
+      }
+      preguntas = combinadas.map(x => x.texto);
+      inversas = combinadas
+        .map((x, idx) => (x.inversa ? idx + 1 : null))
+        .filter(x => x !== null);
+
+      generarFormulario();
+      document.getElementById("resultado").innerHTML = "";
+    }
+
+    // Inicial
+    generarFormulario();
+  </script>
+</body>
+</html>

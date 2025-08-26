@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escala Likert - Adaptación al Cambio</title>
+  <style>
+    body { 
+      font-family: Arial, sans-serif; 
+      margin: 20px; 
+      line-height: 1.6; 
+      background: #f9f9f9; 
+      text-align: center;
+    }
+    h1 { margin-bottom: 10px; }
+    .instructions { 
+      background: #eef; 
+      padding: 10px; 
+      border-radius: 8px; 
+      margin: 0 auto 20px auto; 
+      display: inline-block; 
+      text-align: left;
+    }
+    .question { 
+      margin: 15px auto; 
+      background: #fff; 
+      padding: 15px; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      width: 80%;
+      text-align: center;
+    }
+    .question span.num { font-weight: bold; margin-right: 5px; }
+    .options { margin-top: 10px; }
+    .options label { display: inline-block; margin: 5px 15px; }
+    button { margin: 10px 5px; padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; }
+    button:first-of-type { background: #4CAF50; color: white; }
+    button:last-of-type { background: #f44336; color: white; }
+    .result { 
+      margin: 20px auto; 
+      padding: 15px; 
+      background: #fff; 
+      border-radius: 8px; 
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+      width: 60%; 
+    }
+  </style>
+</head>
+<body>
+  <h1>Escala Likert - Adaptación al Cambio</h1>
+  <div class="instructions">
+    <p><strong>Instrucciones:</strong> Seleccione la opción que mejor refleje su grado de acuerdo con cada afirmación:</p>
+    <ul>
+      <li>A. Totalmente en desacuerdo</li>
+      <li>B. En desacuerdo</li>
+      <li>C. Ni de acuerdo, ni en desacuerdo</li>
+      <li>D. De acuerdo</li>
+      <li>E. Totalmente de acuerdo</li>
+    </ul>
+  </div>
+
+  <form id="likertForm"></form>
+
+  <button type="button" onclick="calcularResultado()">Calcular resultado</button>
+  <button type="button" onclick="reiniciar()">Reiniciar</button>
+
+  <div id="resultado" class="result"></div>
+
+  <script>
+    // 30 ítems (algunos son inversos)
+    let preguntas = [
+      "Acepto y me adapto fácilmente a nuevas situaciones.",
+      "Respondo al cambio con flexibilidad.",
+      "Coopero activamente en la implementación de nuevos objetivos, formas de trabajo y procedimientos.",
+      "Promuevo que mi equipo se adapte a las nuevas condiciones.",
+      "Mantengo una actitud positiva ante cambios imprevistos.",
+      "Me resisto a cambiar mis métodos incluso cuando es necesario.",                            // INVERSA
+      "Aprendo rápidamente herramientas o procesos nuevos.",
+      "Ajusto mis prioridades cuando cambian las metas institucionales.",
+      "Percibo los cambios como una amenaza y no como una oportunidad.",                          // INVERSA
+      "Comparto buenas prácticas para facilitar la transición.",
+      "Mantengo la calma ante la incertidumbre.",
+      "Evito participar en la implementación de nuevos procedimientos.",                          // INVERSA
+      "Replanteo mis métodos cuando el contexto lo requiere.",
+      "Incorporo la retroalimentación para mejorar durante el cambio.",
+      "Prefiero mantener los planes iniciales aunque no funcionen.",                              // INVERSA
+      "Evito asumir nuevos roles o responsabilidades en escenarios de cambio.",                   // INVERSA
+      "Colaboro con otras áreas para implementar cambios.",
+      "Actualizo mis conocimientos para responder a nuevos retos.",
+      "Cumplo los plazos incluso en escenarios de cambio.",
+      "Mantengo los estándares de calidad durante la transición.",
+      "Identifico riesgos del cambio y planteo medidas de mitigación.",
+      "Desaliento a mis compañeros cuando se proponen cambios.",                                  // INVERSA
+      "Animo a otros a mantener una actitud abierta frente al cambio.",
+      "Ignoro la información o la capacitación relacionada con los cambios.",                     // INVERSA
+      "Busco información para comprender el propósito de los cambios.",
+      "Pierdo la calidad de mi trabajo durante la transición.",                                   // INVERSA
+      "Experimento y evalúo nuevas formas de trabajo.",
+      "Me recupero rápido de errores cometidos durante el cambio.",
+      "Dificulto la adaptación de otros al negarme a compartir lo aprendido.",                    // INVERSA
+      "Evalúo los resultados después del cambio para consolidar mejoras."
+    ];
+
+    // Índices (1-based) de preguntas inversas según el orden de arriba
+    let inversas = [6, 9, 12, 15, 16, 22, 24, 26, 29];
+
+    const opcionesLetras = ["A", "B", "C", "D", "E"];
+
+    function generarFormulario() {
+      const form = document.getElementById("likertForm");
+      form.innerHTML = "";
+      preguntas.forEach((texto, i) => {
+        const div = document.createElement("div");
+        div.className = "question";
+        const label = document.createElement("label");
+        label.innerHTML = `<span class="num">${i + 1}.</span> ${texto}`;
+        div.appendChild(label);
+
+        const opcionesDiv = document.createElement("div");
+        opcionesDiv.className = "options";
+        for (let j = 1; j <= 5; j++) {
+          const input = document.createElement("input");
+          input.type = "radio";
+          input.name = "q" + (i + 1);
+          input.value = j;
+          const optLabel = document.createElement("label");
+          optLabel.appendChild(input);
+          optLabel.appendChild(document.createTextNode(" " + opcionesLetras[j - 1]));
+          opcionesDiv.appendChild(optLabel);
+        }
+        div.appendChild(opcionesDiv);
+        form.appendChild(div);
+      });
+    }
+
+    function calcularResultado() {
+      let total = 0, contestadas = 0, malas = [];
+      let sinResponder = [];
+
+      preguntas.forEach((_, i) => {
+        const opciones = document.getElementsByName("q" + (i + 1));
+        let valor = null;
+        for (let op of opciones) if (op.checked) valor = parseInt(op.value);
+
+        if (valor === null) {
+          sinResponder.push(i + 1);
+        } else {
+          contestadas++;
+          if (inversas.includes(i + 1)) valor = 6 - valor; // inversión A=5 ... E=1
+          total += valor;
+          if (valor <= 2) malas.push(i + 1); // baja puntuación tras inversión
+        }
+      });
+
+      if (sinResponder.length > 0) {
+        alert("Debe responder todas las preguntas. Faltan: " + sinResponder.join(", "));
+        return;
+      }
+
+      const promedio = (total / contestadas).toFixed(2);
+      let nivel = "";
+      if (promedio >= 4.5) nivel = "Muy alto";
+      else if (promedio >= 3.5) nivel = "Alto";
+      else if (promedio >= 2.5) nivel = "Medio";
+      else if (promedio >= 1.5) nivel = "Bajo";
+      else nivel = "Muy bajo";
+
+      document.getElementById("resultado").innerHTML =
+        `<p><strong>Puntaje total:</strong> ${total}</p>
+         <p><strong>Promedio:</strong> ${promedio}</p>
+         <p><strong>Nivel:</strong> ${nivel}</p>
+         <p><strong>Preguntas con baja puntuación:</strong> ${malas.join(", ") || "Ninguna"}</p>`;
+    }
+
+    function reiniciar() {
+      // Barajar preguntas y mantener coherencia de "inversas"
+      const combinadas = preguntas.map((texto, idx) => ({
+        texto,
+        inversa: inversas.includes(idx + 1)
+      }));
+      for (let i = combinadas.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [combinadas[i], combinadas[j]] = [combinadas[j], combinadas[i]];
+      }
+      // Re-construir arrays
+      preguntas = combinadas.map(x => x.texto);
+      inversas = combinadas
+        .map((x, idx) => (x.inversa ? idx + 1 : null))
+        .filter(x => x !== null);
+
+      generarFormulario();
+      document.getElementById("resultado").innerHTML = "";
+    }
+
+    // Inicial
+    generarFormulario();
+  </script>
+</body>
+</html>
